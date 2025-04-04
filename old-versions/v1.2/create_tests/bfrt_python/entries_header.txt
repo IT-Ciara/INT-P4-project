@@ -1,0 +1,63 @@
+import random
+
+p4 = bfrt.p4_v1_2.pipe
+
+INGRESS_NO_VLAN_TRAFFIC_TABLE =  p4.Ingress.no_vlan_traffic_table
+INGRESS_VLAN_TRAFFIC_TABLE =  p4.Ingress.vlan_traffic_table
+EGRESS_S_VLAN_TRAFFIC_TABLE =  p4.Egress.egress_s_vlan_traffic_table
+EGRESS_INT_TABLE =  p4.Egress.egress_int_table
+EGRESS_NORMAL_TRAFFIC_TABLE =  p4.Egress.egress_normal_traffic_table
+
+
+def clear_all(verbose=True, batching=True):
+    """
+    Clears all the tables in the P4 pipeline, skipping unsupported tables.
+    """
+    global p4
+
+    unsupported_tables = ['pipe.Egress.egress_int_table']
+
+    # The order of clearing is important to avoid dependencies
+    for table_types in (['MATCH_DIRECT', 'MATCH_INDIRECT_SELECTOR'],
+                        ['SELECTOR'],
+                        ['ACTION_PROFILE']):
+        for table in p4.info(return_info=True, print_info=False):
+            if table['type'] in table_types:
+                table_name = table['full_name']
+                if table_name in unsupported_tables:
+                    if verbose:
+                        print(f"Skipping table {table_name} as it does not support clearing.")
+                    continue
+
+                try:
+                    if verbose:
+                        print(f"Clearing table {table_name:<40} ... ", end='', flush=True)
+                    table['node'].clear(batch=batching)
+                    if verbose:
+                        print('Done')
+                except Exception as e:
+                    if verbose:
+                        print(f"Failed to clear table {table_name}: {e}")
+
+
+def create_entries():
+    """
+    Fill in ipv4_host table with random entries, determined by using the
+    provided function until failure
+
+    Keyword arguments:
+    keyfunc  -- A function that gets "count" as an arg and returns the
+                IP address for that entry (default is use count)
+    batching -- Batch all the commands (default is True)
+
+    Examples:  create_entries(lambda c: randint(0, 0xFFFFFFFF), True)
+               create_entries(lambda c: c + 0xC0a80101, True)
+    """
+    global p4
+    global random
+    global clear_all
+
+    # Traffic Table Names
+    INGRESS_NO_VLAN_TRAFFIC_TABLE =  p4.Ingress.no_vlan_traffic_table
+    INGRESS_VLAN_TRAFFIC_TABLE =  p4.Ingress.vlan_traffic_table
+    EGRESS_S_VLAN_TRAFFIC_TABLE =  p4.Egress.egress_s_vlan_traffic_table

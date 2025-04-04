@@ -1,0 +1,23 @@
+
+    print("Done")
+    print("INGRESS_NO_VLAN_TRAFFIC_TABLE")
+    print(INGRESS_NO_VLAN_TRAFFIC_TABLE.dump())
+    print("INGRESS_VLAN_TRAFFIC_TABLE")
+    print(INGRESS_VLAN_TRAFFIC_TABLE.dump())
+    print("EGRESS_S_VLAN_TRAFFIC_TABLE")
+    print(EGRESS_S_VLAN_TRAFFIC_TABLE.dump())
+    print("EGRESS_INT_TABLE")
+    print(EGRESS_INT_TABLE.dump())
+    print("EGRESS_NORMAL_TRAFFIC_TABLE")
+    print(EGRESS_NORMAL_TRAFFIC_TABLE.dump())
+    
+
+clear_all()
+create_entries()
+print("""
+*** Run this script in the interactive mode
+***
+*** Use create_entries() to test the capacity of a multi-way hash table.
+*** Use clear_all() to clear the tables
+*** Use help(<function>) to learn more
+""")

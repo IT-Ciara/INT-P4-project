@@ -1,0 +1,19 @@
+    print("Done")
+    print("Table IngressVlanTrafficTable")
+    print(IngressVlanTrafficTable.dump())
+    print("IngressNormalTrafficTable")
+    print(IngressNormalTrafficTable.dump())
+    print("EgressNormalTrafficTable")
+    print(EgressNormalTrafficTable.dump())
+    print("EgressVlanTrafficTable")
+    print(EgressVlanTrafficTable.dump())
+
+clear_all()
+create_entries()
+print("""
+*** Run this script in the interactive mode
+***
+*** Use create_entries() to test the capacity of a multi-way hash table.
+*** Use clear_all() to clear the tables
+*** Use help(<function>) to learn more
+""")
