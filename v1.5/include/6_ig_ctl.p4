@@ -27,7 +27,7 @@ control Ingress(
     // ====== Stage 1: User Port? ======
     DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_user_port_tbl_counter;
     // ===== Stage 3: Topology Discovery? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_topolog_discovery_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_topology_discovery_tbl_counter;
     // ===== Stage 3: Link continuity test? ======
     DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_link_continuity_test_tbl_counter;
     // ===== Stage 4: Partner provided link? ======
@@ -60,11 +60,13 @@ control Ingress(
         hdr.bridged_md.do_egr_mirroring = egr_mir;
         hdr.bridged_md.egr_mir_ses = egr_ses;
     }
+
     // ====== Stage 1: User Port? ======
     action user_port(bit <1> user_port){ 
         ig_user_port_tbl_counter.count();
         meta.user_port = user_port;
     }  
+
     action mod_output_port(bit<128> routeid) {
         bit<16> nbase=0;
         bit<64> ncount=4294967296*2;
@@ -79,7 +81,7 @@ control Ingress(
     } 
     // ====== Stage 3: Topology Discovery? ======
     action topology_discovery(){
-        ig_topolog_discovery_tbl_counter.count();
+        ig_topology_discovery_tbl_counter.count();
         ig_tm_md.ucast_egress_port = CPU_PORT_VALUE; //send to cpu
     } 
     // ===== Stage 3: Link continuity test? ======
@@ -96,7 +98,7 @@ control Ingress(
     action rm_s_vlan_add_int(){
         hdr.ig_metadata.setValid();
         hdr.ig_metadata.rm_s_vlan_add_int = 1;
-        set_output_port(11);
+        set_output_port(10);
         ig_partner_provided_link_tbl_counter.count();
     }  
     // ==== Stage 5: SDN trace? ======
@@ -132,7 +134,7 @@ control Ingress(
     action set_normal_pkt() {
         hdr.bridged_md.setValid();
         hdr.bridged_md.pkt_type = PKT_TYPE_NORMAL;
-        set_output_port(12);
+        set_output_port(10);
     }    
     //===== Stage 9: Port Mirror? ======
     action set_normal_pkt_flow_mirror() {
@@ -188,7 +190,7 @@ control Ingress(
         size = 8;        
     }
     // ====== Stage 3: Topology Discovery? ======
-    table ig_topolog_discovery_tbl{
+    table ig_topology_discovery_tbl{
         key = {
             ig_intr_md.ingress_port: exact;
             hdr.ethernet.ether_type: exact;
@@ -197,7 +199,7 @@ control Ingress(
             topology_discovery;
         }
         size = 10;
-        counters = ig_topolog_discovery_tbl_counter;
+        counters = ig_topology_discovery_tbl_counter;
     }
     // ===== Stage 3: Link continuity test? ======
     table ig_link_continuity_test_tbl{
@@ -314,6 +316,7 @@ control Ingress(
 
     apply{
         meta.core_node = is_core_node.execute(0);
+        set_normal_pkt();
         if (ig_user_port_tbl.apply().miss) {
             meta.user_port = 0;
             //===== Stage 2: has Polka ID? ======
@@ -321,13 +324,16 @@ control Ingress(
             if(hdr.ethernet.ether_type!=ETHER_TYPE_POLKA){
                 meta.has_polka = 0;
                 //===== Stage3: Topology Discovery? ======
-                if(ig_topolog_discovery_tbl.apply().miss){
+                if(ig_topology_discovery_tbl.apply().miss){
                     //===== Stage3: Link continuity test? ======
                     if(ig_link_continuity_test_tbl.apply().miss){
                         //===== Stage 4: Partner provided link? ======
                         ig_partner_provided_link_tbl.apply();
                     }
                 }
+            }
+            else{
+                meta.eval_port_mirror = 1;
             }
         } 
         if(meta.user_port == 1){
@@ -366,9 +372,19 @@ control Ingress(
         if(meta.core_node == 1){
             mod_output_port(meta.polka_routeid);
         }
-        //===== Stage 10: No Polka - Destination Endpoint? ======
-        else{
-            ig_no_polka_dst_ep_tbl.apply();
+        //==== Stage 11: Polka - Destination Endpoint? ====== No
+        else if(meta.core_node==0){
+            //===== Stage 10: No Polka - Destination Endpoint? ======
+            if(hdr.ethernet.ether_type != ETHER_TYPE_POLKA){
+                ig_no_polka_dst_ep_tbl.apply();
+            }
+            else if(hdr.polka.isValid() && meta.ing_mir_ses == 0){
+                set_md(10,1,400,0,0);
+                if(meta.do_ing_mirroring == 1){
+                    set_mirror_type();
+                }
+                set_normal_pkt();
+            }
         }
     }
 }

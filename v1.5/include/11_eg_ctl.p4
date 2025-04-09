@@ -212,6 +212,7 @@ control Egress(
         default_action = set_full_int_stack;
         size = 5;
     }
+
     // ===== Stage 10: No Polka - Destination Endpoint? ======
     table eg_no_polka_dst_ep_tbl{
         key = {
@@ -256,9 +257,7 @@ control Egress(
             if(hdr.ethernet.ether_type == ETHER_TYPE_POLKA) {
                 eg_int_table.apply(); 
             }
-            else{
-                rm_md();
-            }
         }
+        rm_md();
     }
 }
