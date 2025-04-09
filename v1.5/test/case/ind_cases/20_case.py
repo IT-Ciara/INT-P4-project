@@ -8,6 +8,7 @@ import json
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
+import ipaddress
 
 from case_functions import p4_functions as p4f  # No need for relative import
 from case_functions import add_entries as ae  # No need for relative import
@@ -21,17 +22,37 @@ interfaces = ["veth0", "veth2", "veth4", "veth6", "veth8",
               "veth20", "veth22", "veth24", "veth26", "veth28",
               "veth30", "veth32","veth250"]
 
+def split_128bit_to_32bit_chunks(val):
+    return [
+        (val >> 96) & 0xFFFFFFFF,
+        (val >> 64) & 0xFFFFFFFF,
+        (val >> 32) & 0xFFFFFFFF,
+        val & 0xFFFFFFFF
+    ]
+
 #===============================================================================
-#                         C A S E: 20
+#                         C A S E 20: 
 #===============================================================================
 def main():
     p4f.print_console("blue","Case 20")
     with open('../polka/route_info.json', 'r') as f:
         route_data = json.load(f)    
 
-    ingress_port = 1
-    egress_port = 12
-    mirror_port = 16
+    ingress_port=1
+    egress_port=10
+    mirror_port=16
+
+    ing_mir=1 
+    ing_ses=250
+    egr_mir=0
+    egr_ses=0 
+
+
+    endpoint=0
+    core_node=0
+    edge_node=1
+    selected_node = 2
+
     #=================Packet details=================
     pkt_override = {
         "ethernet": {
@@ -66,12 +87,12 @@ def main():
         #     "vid": 0,
         #     "ether_type": 0
         # },
-        # "ipv4": {
-        #     "valid": True,
-        #     "src_addr": "192.168.230.2",
-        #     "dst_addr": "192.168.230.3",
-        #     "protocol": 17
-        # },
+        "ipv4": {
+            "valid": True,
+            "src_addr": "192.168.233.2",
+            "dst_addr": "192.168.233.3",
+            "protocol": 17
+        },
         # "udp": {
         #     "valid": True,
         #     "src_port": 1000,
@@ -98,7 +119,7 @@ def main():
     interface, dev_tgt, bfrt_info = p4f.gc_connect()
 
     #===============Clear tables================
-    # p4f.clear_all_tables(bfrt_info, dev_tgt)
+    p4f.clear_all_tables(bfrt_info, dev_tgt)
 
     #=====================================================
     #=====================Stages==========================
@@ -116,29 +137,47 @@ def main():
     data = stg1_ig_table.make_data([gc.DataTuple("user_port", 1)],action_name=f"Ingress.{stg1_ig_actions[0]}")
     stg1_ig_table.entry_add(dev_tgt, [key], [data])
 
+
+
     # ====== Stage 2: Has Polka ID? ====== 
     # N/A
+
+
 
     # ====== Stage 3: Topology Discovery? ======
     # N/A
 
+
+
     # ====== Stage 3: Link Continuity Test? ======
     # N/A
+
+
 
     # ====== Stage 4: Partner-Provided Link? ======
     # N/A
 
+
+
     # ====== Stage 5: SDN Trace? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 6: Contention Flow? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 7: Port Loop? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 7: VLAN Loop? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 8: Flow Mirror? ======
     # Yes
@@ -151,10 +190,6 @@ def main():
     stg_8_ig_tbl.entry_del(dev_tgt,[])
 
     key = stg_8_ig_tbl.make_key([gc.KeyTuple("ig_intr_md.ingress_port", ingress_port)])
-    ing_mir = 1 
-    ing_ses = 250
-    egr_mir = 0
-    egr_ses =0
 
     data = stg_8_ig_tbl.make_data([
         gc.DataTuple("egress_port", egress_port),
@@ -164,16 +199,15 @@ def main():
         gc.DataTuple("egr_ses", egr_ses)
     ],action_name=f"Ingress.{stg_8_ig_actions[0]}")
     stg_8_ig_tbl.entry_add(dev_tgt, [key], [data])
-    print("Ingress port mirror entry added successfully.")    
+    print("Ingress port mirror entry added successfully.")  
+
+
 
     # ====== Stage 9: Port Mirror? ======
     # YES
     stg_9_ig_tbl_name = "Ingress.ig_port_mirror_tbl"
     stg_9_ig_actions = ['set_md_port_mirror']
-    ing_mir = 1 
-    ing_ses = 250
-    egr_mir = 0
-    egr_ses =0    
+   
     #===================Add entries=====================
     stg_9_ig_tbl = bfrt_info.table_get(stg_9_ig_tbl_name)
     stg_9_ig_tbl.entry_del(dev_tgt,[])
@@ -186,37 +220,17 @@ def main():
         gc.DataTuple("egr_ses", egr_ses)
     ],action_name=f"Ingress.{stg_9_ig_actions[0]}")
     stg_9_ig_tbl.entry_add(dev_tgt, [key], [data])
-    print("Ingress port mirror entry added successfully.")    
+    print("Ingress port mirror entry added successfully.")  
+
+
 
     # ====== Stage 10: No Polka - Destination Endpoint? ======
-    # NO
-
-    # ====== Stage 11: Polka - Destination Endpoint? ======
-    # # YES
-
-    # ====== Ingress ====
-    # #-------Set the node to core node-------
-    core_node_reg_tbl_name = "Ingress.core_node"
-    edge_node_table = bfrt_info.table_get(core_node_reg_tbl_name)
-    edge_node_table.entry_del(dev_tgt,[])
-
-    key = edge_node_table.make_key([gc.KeyTuple('$REGISTER_INDEX', 0)])
-    data = edge_node_table.make_data([gc.DataTuple('Ingress.core_node.f1', 0)])
-    edge_node_table.entry_mod(dev_tgt, [key], [data])
-    print("Register updated successfully.")
-
-    # ======= Egress ======
-    # #-------Set the node to edge node-------
-    edne_node_reg_tbl_name = "Egress.edge_node"
-    edge_node_table = bfrt_info.table_get(edne_node_reg_tbl_name)
-    edge_node_table.entry_del(dev_tgt,[])
-
-    key = edge_node_table.make_key([gc.KeyTuple('$REGISTER_INDEX', 0)])
-    data = edge_node_table.make_data([gc.DataTuple('Egress.edge_node.f1', 1)])
-    edge_node_table.entry_mod(dev_tgt, [key], [data])
-    print("Register updated successfully.")
+    # N/A
 
 
+
+    # ====== Stage 11: Polka - Destination Endpoint? ======  
+    # YES
     stg11_eg_table_name = 'pipe.Egress.eg_polka_dst_ep_tbl'
     stg11_eg_actions = ['export_int','rm_polka_int']
 
@@ -234,6 +248,63 @@ def main():
     key = eg_table.make_key([gc.KeyTuple("eg_intr_md.egress_port", egress_port)])
     data = eg_table.make_data([],action_name=f"Egress.{stg11_eg_actions[1]}")
     eg_table.entry_add(dev_tgt, [key], [data])
+
+
+    #==================================================================
+    # ======= P O L K A - R E G I S T E R S ========
+    #==================================================================
+    # ====== Ingress ====
+    # #-------Set the node to core node-------    
+    core_node_reg_tbl_name = "Ingress.core_node"
+    core_node_table = bfrt_info.table_get(core_node_reg_tbl_name)
+    core_node_table.entry_del(dev_tgt,[])
+
+    key = core_node_table.make_key([gc.KeyTuple("$REGISTER_INDEX",0)])
+    data = core_node_table.make_data([gc.DataTuple('Ingress.core_node.f1', core_node)])
+    core_node_table.entry_mod(dev_tgt, [key], [data])
+    
+    # ======= Egress ======
+    # #-------Set the node to edge node-------
+    edne_node_reg_tbl_name = "Egress.edge_node"   
+    edge_node_table = bfrt_info.table_get(edne_node_reg_tbl_name)
+    edge_node_table.entry_del(dev_tgt,[])
+
+    key = edge_node_table.make_key([gc.KeyTuple("$REGISTER_INDEX",0)])
+    data = edge_node_table.make_data([gc.DataTuple('Egress.edge_node.f1', edge_node)])
+    edge_node_table.entry_mod(dev_tgt, [key], [data])
+    
+    # ======== Route ID ========
+    # #-------Set the route ID-------
+    routeid_int = route_data['route']['values']['int_route_id']
+    chunks = split_128bit_to_32bit_chunks(routeid_int)
+    reg_names = [
+        "Egress.routeId_high_upper",
+        "Egress.routeId_high_lower",
+        "Egress.routeId_low_upper",
+        "Egress.routeId_low_lower"
+    ]
+    for i, reg_name in enumerate(reg_names):
+        routeId_tbl = bfrt_info.table_get(reg_name)
+        key = routeId_tbl.make_key([gc.KeyTuple('$REGISTER_INDEX', 0)])
+        data = routeId_tbl.make_data([
+            gc.DataTuple(f'{reg_name}.f1', chunks[i])
+        ])
+        routeId_tbl.entry_mod(dev_tgt, [key], [data])
+    
+    # =========== Node ID ===========
+    node_key = f"node_{selected_node}"
+    node_id_hex = route_data['nodes'][node_key]['id']['hex_node_id']
+    node_id_int = int(node_id_hex, 16) & 0xffff  # Convert then mask    
+    algorithm_tbl = bfrt_info.table_get("Ingress.hash.algorithm")
+    data_field_list = [
+        gc.DataTuple("polynomial",node_id_int), #node_id
+    ]
+    data_list = algorithm_tbl.make_data(data_field_list,"user_defined")
+    algorithm_tbl.default_entry_set(dev_tgt, data_list)  
+
+    #==================================================================  
+
+
 
                
     #===================Sniff packets====================

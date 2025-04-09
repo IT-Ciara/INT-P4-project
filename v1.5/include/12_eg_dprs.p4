@@ -13,6 +13,6 @@ control EgressDeparser(packet_out pkt,
                 mirror.emit<mirror_h>(meta.egr_mir_ses, {meta.pkt_type});
             }
         }
-        pkt.emit(hdr.ethernet);
+        pkt.emit(hdr);
     }
 }

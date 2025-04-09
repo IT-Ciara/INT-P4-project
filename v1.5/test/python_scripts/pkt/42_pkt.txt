@@ -1,0 +1,8 @@
+=== Input Packet (veth16) ===
+eth(0x8842)/polka(0x0601)/int_shim(2,0x8100)/int0/int1/o-vlan(100,0x0800)/ipv4/udp/payload
+
+=== Output Packet (veth20) ===
+eth(0x8100)/o-vlan(100,0x0800)/ipv4/udp/payload
+
+=== Output Packet (veth32) ===
+eth(0x0601)/int_shim(2,0x0000)/int0/int1

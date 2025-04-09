@@ -1,0 +1,5 @@
+=== Input Packet (veth2) ===
+eth(0x8100)/o-vlan(200,0x0800)/ipv4/udp/payload
+
+=== Output Packet (veth20) ===
+eth(0x8100)/o-vlan(400,0x0800)/ipv4/udp/payload

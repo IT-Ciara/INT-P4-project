@@ -79,6 +79,7 @@ def create_entries():
 
     unicast_session(session=100, port=14)
     unicast_session(session=150, port=15)
+    unicast_session(session=400, port=16)
 
     multicast_session(session=200, ports=[14, 15])
     multicast_session(session=250, ports=[14, 15, 16])

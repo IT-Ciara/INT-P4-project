@@ -31,19 +31,28 @@ def split_128bit_to_32bit_chunks(val):
     ]
 
 #===============================================================================
-#                         C A S E: 26
+#                         C A S E 26: 
 #===============================================================================
 def main():
     p4f.print_console("blue","Case 26")
     with open('../polka/route_info.json', 'r') as f:
         route_data = json.load(f)    
 
-    ingress_port = 2
-    egress_port = 12
-    mirror_port = 16
-    endpoint =0
+    ingress_port=1
+    egress_port=10
+    mirror_port=16
+
+    ing_mir=0 
+    ing_ses=0
+    egr_mir=0
+    egr_ses=0 
+
+
+    endpoint=0
     core_node=0
     edge_node=0
+    selected_node = 2
+
     #=================Packet details=================
     pkt_override = {
         "ethernet": {
@@ -129,23 +138,37 @@ def main():
     data = stg1_ig_table.make_data([gc.DataTuple("user_port", 1)],action_name=f"Ingress.{stg1_ig_actions[0]}")
     stg1_ig_table.entry_add(dev_tgt, [key], [data])
 
+
+
     # ====== Stage 2: Has Polka ID? ====== 
     # N/A
+
+
 
     # ====== Stage 3: Topology Discovery? ======
     # N/A
 
+
+
     # ====== Stage 3: Link Continuity Test? ======
     # N/A
+
+
 
     # ====== Stage 4: Partner-Provided Link? ======
     # N/A
 
+
+
     # ====== Stage 5: SDN Trace? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 6: Contention Flow? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 7: Port Loop? ======
     # YES
@@ -160,20 +183,89 @@ def main():
     data = stg_7_port_loop_ig_tbl.make_data([],action_name=f"Ingress.{stg_7_port_loop_ig_actions[0]}")
     stg_7_port_loop_ig_tbl.entry_add(dev_tgt, [key], [data])
 
+
+
     # ====== Stage 7: VLAN Loop? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 8: Flow Mirror? ======
-    # No
+    # N/A
+
+
 
     # ====== Stage 9: Port Mirror? ======
-    # NO
+    # N/A
+
+
 
     # ====== Stage 10: No Polka - Destination Endpoint? ======
-    # NO
-   
-    # ====== Stage 11: Polka - Destination Endpoint? ======
-    # NO    
+    # N/A
+
+
+
+    # ====== Stage 11: Polka - Destination Endpoint? ======  
+    # N/A
+
+
+
+    #==================================================================
+    # ======= P O L K A - R E G I S T E R S ========
+    #==================================================================
+    # ====== Ingress ====
+    # #-------Set the node to core node-------    
+    core_node_reg_tbl_name = "Ingress.core_node"
+    core_node_table = bfrt_info.table_get(core_node_reg_tbl_name)
+    core_node_table.entry_del(dev_tgt,[])
+
+    key = core_node_table.make_key([gc.KeyTuple("$REGISTER_INDEX",0)])
+    data = core_node_table.make_data([gc.DataTuple('Ingress.core_node.f1', core_node)])
+    core_node_table.entry_mod(dev_tgt, [key], [data])
+    
+    # ======= Egress ======
+    # #-------Set the node to edge node-------
+    edne_node_reg_tbl_name = "Egress.edge_node"   
+    edge_node_table = bfrt_info.table_get(edne_node_reg_tbl_name)
+    edge_node_table.entry_del(dev_tgt,[])
+
+    key = edge_node_table.make_key([gc.KeyTuple("$REGISTER_INDEX",0)])
+    data = edge_node_table.make_data([gc.DataTuple('Egress.edge_node.f1', edge_node)])
+    edge_node_table.entry_mod(dev_tgt, [key], [data])
+    
+    # ======== Route ID ========
+    # #-------Set the route ID-------
+    routeid_int = route_data['route']['values']['int_route_id']
+    chunks = split_128bit_to_32bit_chunks(routeid_int)
+    reg_names = [
+        "Egress.routeId_high_upper",
+        "Egress.routeId_high_lower",
+        "Egress.routeId_low_upper",
+        "Egress.routeId_low_lower"
+    ]
+    for i, reg_name in enumerate(reg_names):
+        routeId_tbl = bfrt_info.table_get(reg_name)
+        key = routeId_tbl.make_key([gc.KeyTuple('$REGISTER_INDEX', 0)])
+        data = routeId_tbl.make_data([
+            gc.DataTuple(f'{reg_name}.f1', chunks[i])
+        ])
+        routeId_tbl.entry_mod(dev_tgt, [key], [data])
+    
+    # =========== Node ID ===========
+    node_key = f"node_{selected_node}"
+    node_id_hex = route_data['nodes'][node_key]['id']['hex_node_id']
+    node_id_int = int(node_id_hex, 16) & 0xffff  # Convert then mask    
+    algorithm_tbl = bfrt_info.table_get("Ingress.hash.algorithm")
+    data_field_list = [
+        gc.DataTuple("polynomial",node_id_int), #node_id
+    ]
+    data_list = algorithm_tbl.make_data(data_field_list,"user_defined")
+    algorithm_tbl.default_entry_set(dev_tgt, data_list)  
+
+    #==================================================================  
+
+
+
                
     #===================Sniff packets====================
     #---------------------------------------------------
