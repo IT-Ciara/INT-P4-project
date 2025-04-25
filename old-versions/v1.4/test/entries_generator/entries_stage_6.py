@@ -55,7 +55,7 @@ def main():
     
     add_mirror_cfg_entry(mirror_cfg_table, dev_tgt)
     add_entry(table, dev_tgt,ingress_port=6, vid=1000, proto=17, dst_port=55, 
-              egress_port=8, ing_mir=1, ing_ses=200, egr_mir=0, egr_ses=0)
+              egress_port=8, ing_mir=1, ing_ses=40, egr_mir=0, egr_ses=0)
     # # Cleanup
     interface.tear_down_stream()  
     

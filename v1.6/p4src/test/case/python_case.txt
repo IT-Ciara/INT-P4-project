@@ -1,0 +1,1 @@
+script --flush --command="python3 ind_cases/${CASE}_case.py" /dev/null | sed 's/\x1b\[[0-9;]*m//g' > "../python_scripts/pkt_data.txt" ; python3 ../python_scripts/get_pkt.py ;  cp ../python_scripts/pkt_data.txt ../python_scripts/logs/${CASE}_case.txt

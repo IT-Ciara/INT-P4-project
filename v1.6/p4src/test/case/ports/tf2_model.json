@@ -1,0 +1,5 @@
+{
+    "interfaces": ["veth250","veth32"],
+    "ingress_port": 24,
+    "egress_port": 2
+}

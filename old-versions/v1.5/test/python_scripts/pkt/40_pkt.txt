@@ -1,0 +1,5 @@
+=== Input Packet (veth16) ===
+eth(0x88CC)/lldpdu
+
+=== Output Packet (veth250) ===
+eth(0x88CC)/lldpdu

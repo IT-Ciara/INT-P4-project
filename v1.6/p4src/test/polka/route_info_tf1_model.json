@@ -1,0 +1,50 @@
+{
+    "route": {
+        "values": {
+            "int_route_id": 64,
+            "bin_route_id": "1000000",
+            "hex_route_id": "0x40"
+        },
+        "nodes": {
+            "num_of_nodes": 3
+        }
+    },
+    "nodes": {
+        "node_1": {
+            "id": {
+                "hex_node_id": "0x1002b",
+                "bin_node_id": "10000000000101011",
+                "dec_node_id": 65579
+            },
+            "output_port": {
+                "hex_output_port": "0x40",
+                "bin_output_port": "1000000",
+                "dec_output_port": 64
+            }
+        },
+        "node_2": {
+            "id": {
+                "hex_node_id": "0x1002d",
+                "bin_node_id": "10000000000101101",
+                "dec_node_id": 65581
+            },
+            "output_port": {
+                "hex_output_port": "0x40",
+                "bin_output_port": "1000000",
+                "dec_output_port": 64
+            }
+        },
+        "node_3": {
+            "id": {
+                "hex_node_id": "0x10039",
+                "bin_node_id": "10000000000111001",
+                "dec_node_id": 65593
+            },
+            "output_port": {
+                "hex_output_port": "0x40",
+                "bin_output_port": "1000000",
+                "dec_output_port": 64
+            }
+        }
+    }
+}
