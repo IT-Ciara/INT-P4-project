@@ -74,9 +74,6 @@ header ig_md_h {
     bit<48> ig_tstamp;
     bit<7> padding;
     PortId_t ig_port;
-    
-    // bit<1> endpoint;
-    // ==== Stage 4: Partner-provided link? ====
-    // bit<1> rm_s_vlan_add_int;
-
+    bit<1> export_int;
+    bit<7> padding2;
 }

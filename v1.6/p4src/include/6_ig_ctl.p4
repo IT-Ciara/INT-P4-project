@@ -341,10 +341,8 @@ control Ingress(
         ig_port_info_tbl.apply();
         set_normal_pkt();
         if(meta.user_port==0){
-            //===== Stage 2: has Polka ID? ======
-            meta.has_polka = 1;
+            //===== Stage 2: has Polka ID? No ======
             if(hdr.ethernet.ether_type!=ETHER_TYPE_POLKA){
-                meta.has_polka = 0;
                 //===== Stage3: Topology Discovery? ======
                 if(ig_topology_discovery_tbl.apply().miss){
                     //===== Stage3: Link continuity test? ======
@@ -355,6 +353,7 @@ control Ingress(
                     }
                 }
             }
+            //===== Stage 2: has Polka ID? Yes ======
             else{
                 meta.eval_port_mirror = 1;
             }            
@@ -370,10 +369,6 @@ control Ingress(
                         if(ig_vlan_loop_tbl.apply().miss){
                             //===== Stage 8: Flow mirror? ======
                             ig_flow_mirror_tbl.apply();
-                            // if(meta.do_ing_mirroring == 1){
-                            //     set_mirror_type();
-                            // }
-                            // set_normal_pkt_flow_mirror();
                         }
                     }
                 }
@@ -385,9 +380,9 @@ control Ingress(
         }
         if(hdr.polka.isValid()){
             mod_output_port(meta.polka_routeid);           
-        }
             //==== Stage 11: Polka - Destination Endpoint? ====== No
-        ig_output_polka_port_tbl.apply();
+            ig_output_polka_port_tbl.apply();
+        }
         if(meta.do_ing_mirroring == 1){
             set_mirror_type();
         }    
