@@ -2,13 +2,13 @@
 
 Welcome to the INT-P4-Project repository!
 
-The current implementation is available in the [v1.5](./v1.5/) folder
+The current implementation is available in the [v1.6](./v1.6/) folder
 
 #### Versioning
-* 📌 Current version: v1.5
+* 📌 Current version: v1.6
 * 📁 Past versions can be found in the [old-versions](./old-versions) directory.
 
-The current pipeline structure (v1.5) is illustrated below:
+The current pipeline structure (v1.6) is illustrated below:
 
 ![Stages](./Figures/amlight-pipeline-Progress-Stages.drawio.png)
 
