@@ -21,6 +21,7 @@ from case_functions import sniff_pkts as sp  # No need for relative import
 #               "veth30", "veth32","veth250"]
 # List of interfaces to sniff
 # interfaces = ["enp4s0f0","enp4s0f1"]
+
 import argparse
 
 # Parse command-line arguments
@@ -113,15 +114,20 @@ def egress_transit_port_tbl(eg_transit_port_tbl,dev_tgt,ether_type,eg_transit_po
 
 
 #===============================================================================
-#                         C A S E 8: 
+#                         C A S E 25: 
 #===============================================================================
 def main():
-    p4f.print_console("blue","Case 8")
+    p4f.print_console("blue","Case 25")
     with open(f'../polka/route_info_{TARGET}.json', 'r') as f:
         route_data = json.load(f)    
 
     initial_ingress_port = interfaces[1]
     selected_node = 1
+
+    ing_mir=1 
+    ing_ses=55
+    egr_mir=0
+    egr_ses=0 
 
     #=================Packet details=================
     pkt_override = {
@@ -129,25 +135,25 @@ def main():
             "valid": True,
             "dst_addr": "aa:aa:aa:aa:aa:aa",
             "src_addr": "bb:bb:bb:bb:bb:bb",
-            "ether_type": 0x8100
+            "ether_type": 0x8842
         },
         "s_vlan": {
             "valid":False,
             "vid": 900,
-            "ether_type": 0x800
+            "ether_type": 0x8100
         }, 
         "polka":{
-            "valid":False,
+            "valid":True,
             "proto": 0x0601,
             "routeid": int(route_data['route']['values']['hex_route_id'], 16)
         },        
         "custom_int_shim": {
-            "valid": False,
+            "valid": True,
             "int_count": 1,
             "next_hdr": 0x800,
-        },        
+        },          
         "u_vlan": {
-            "valid": True,
+            "valid": False,
             "vid": 200,
             "ether_type": 0x800
         },
@@ -158,6 +164,7 @@ def main():
             "protocol": 17
         }    
     }
+
 
     eth_type = pkt_override['ethernet']['ether_type']
     u_vid = 0 
@@ -173,21 +180,21 @@ def main():
         u_mask = 0xFF    
 
 
+
     ports_config = {
         "1": {
             # "ingress_port": 64,
             "ingress_port": ports_data['ingress_port'],
-            # user_port | core_port | transit_port | edge_port
-            "ingress_port_md": [1],
+            "ingress_port_md": [0],
             # "egress_port":66,
             "egress_port": ports_data['egress_port'],
-            # user_port| p4_sw_port | transit_port
-            "egress_port_md": [0,0,1],
+            "egress_port_md": [0,1,0],
             #eth type, u_vlan, u_vlan mask, s_vlan, s_vlan mask
             "pkt_values": [eth_type, u_vid, u_mask, s_vid, s_mask],
-            "action": "add_s_vlan"
+            "action": "nothing"
         }
     }
+
 
 
 
@@ -204,12 +211,103 @@ def main():
 
     #============================================ I N G R E S S    T A B L E S =================================================
     #---------------------------------------------------------------------------------------------------------------------------
+    
+    #============================================ I N G R E S S    T A B L E S =================================================
+    #---------------------------------------------------------------------------------------------------------------------------
     ig_port_info_tbl_name = 'pipe.Ingress.ig_port_info_tbl'
     ig_port_info_tbl_actions = ['set_port_md']
     ig_action = ig_port_info_tbl_actions[0]
     #---------------------------------------------------
     ig_port_info_tbl = bfrt_info.table_get(ig_port_info_tbl_name)
     ig_port_info_tbl.entry_del(dev_tgt,[])
+
+    #=====================================================
+    #=====================Stages==========================
+    # ====== Stage 1: User Port? ====== 
+    # N/A
+
+
+
+    # ====== Stage 2: Has Polka ID? ====== 
+    # N/A
+
+
+
+    # ====== Stage 3: Topology Discovery? ======
+    # N/A
+
+
+
+    # ====== Stage 3: Link Continuity Test? ======
+    # N/A
+
+
+
+    # ====== Stage 4: Partner-Provided Link? ======
+    # N/A
+
+
+
+    # ====== Stage 5: SDN Trace? ======
+    # N/A
+
+
+
+    # ====== Stage 6: Contention Flow? ======
+    # N/A
+
+
+
+    # ====== Stage 7: Port Loop? ======
+    # N/A
+
+
+
+    # ====== Stage 7: VLAN Loop? ======
+    # N/A
+
+
+
+    # ====== Stage 8: Flow Mirror? ======
+    # N/A
+
+
+
+    # ====== Stage 9: Port Mirror? ======
+    # N/A
+
+
+
+
+    # ====== Stage 10: No Polka - Destination Endpoint? ======
+    # N/A
+
+
+
+    # ====== Stage 11: Polka - Destination Endpoint? ======  
+    # N/A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #============================================== E G R E S S    T A B L E S =================================================
+    #---------------------------------------------------------------------------------------------------------------------------
 
     #=====================================================
     #=====================Stages==========================
@@ -344,8 +442,8 @@ def main():
 
         eth_type, u_vid, u_mask, s_vid, s_mask = config['pkt_values']
         print(f"Packet values: Eth Type: {hex(eth_type)}, U VID: {u_vid}, U Mask: {u_mask}, S VID: {s_vid}, S Mask: {s_mask}")
-        current_u_vid = 0
-        # current_u_vid = pkt_override['u_vlan']['vid']
+
+
         #Add entries to the ingress port table
         ig_set_port_md(ig_port_info_tbl,dev_tgt,ingress_port,ig_user_port,egress_port,'set_port_md')
 
@@ -356,7 +454,7 @@ def main():
         print(f"Action: {eg_action}")
         if eg_user_port==1:
             #Add entries to the egress user port table
-            egress_user_port_tbl(eg_user_port_tbl,dev_tgt,eth_type,u_vid,u_mask,s_vid,s_mask,eg_action,new_vid=current_u_vid,new_vid_actions=new_vid_actions)
+            egress_user_port_tbl(eg_user_port_tbl,dev_tgt,eth_type,u_vid,u_mask,s_vid,s_mask,eg_action,new_vid_actions)
         elif eg_p4_sw_port==1:
             #Add entries to the egress p4 sw port table
             egress_p4_sw_port_tbl(eg_p4_sw_port_tbl,dev_tgt,eth_type,eg_p4_sw_port,eg_action,ingress_port)

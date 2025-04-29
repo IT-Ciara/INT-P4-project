@@ -214,6 +214,16 @@ def parse_pkts(pkt, binary_str):
     if next_hdr == "0x88CC":
         lldp = LLDPDU(payload)
         print_layer_fields(lldp)
+        result.append(f"lldp")
+
+    #LCTP
+    if next_hdr == "0x8809":
+        # lctp = LCTP(payload)
+        # print_layer_fields(lctp)
+        payload = "This is a LCTP payload"
+        raw = Raw(payload)
+        print_layer_fields(raw)
+        result.append(f"lctp")        
 
     # IPv4
     if next_hdr == "0x0800":

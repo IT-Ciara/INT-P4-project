@@ -16,6 +16,8 @@ const bit<16> ETHER_TYPE_ARP = 0x0806;
 const bit<16> ETHER_TYPE_INT = 0X0601;
 const bit<16> ETHER_TYPE_VLAN = 0x8100;
 const bit<16> ETHER_TYPE_QINQ = 0x88A8;
+const bit<16> ETHER_TYPE_LLDP = 0x88CC;
+const bit<16> ETHER_TYPE_LCTP = 0x8809;
 
 typedef bit <128> polka_route_t;
 
@@ -29,7 +31,8 @@ const mirror_type_t MIRROR_TYPE_I2E = 1;
 const mirror_type_t MIRROR_TYPE_E2E = 2;
 
 
-
+const PortId_t EXPORT_INT1 = 13;
+const PortId_t EXPORT_INT2 = 16;
 
 
 

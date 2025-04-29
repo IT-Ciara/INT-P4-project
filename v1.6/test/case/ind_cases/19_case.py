@@ -52,7 +52,7 @@ def split_128bit_to_32bit_chunks(val):
     ]
 
 
-def ig_set_port_md(ig_port_info_tbl,dev_tgt,ingress_port,ig_user_port,ig_core_port,ig_transit_port,ig_edge_port,egress_port,action):
+def ig_set_port_md(ig_port_info_tbl,dev_tgt,ingress_port,ig_user_port,egress_port,action):
     #Add entries to the table
     key =ig_port_info_tbl.make_key([gc.KeyTuple("ig_intr_md.ingress_port",ingress_port)])
     data =ig_port_info_tbl.make_data([gc.DataTuple("user_port",ig_user_port),
@@ -70,7 +70,7 @@ def eg_set_port_md(eg_edge_port_tbl,dev_tgt,egress_port,eg_user_port,eg_p4_sw_po
     eg_edge_port_tbl.entry_add(dev_tgt, [key], [data])
 
 
-def egress_user_port_tbl(eg_user_port_tbl,dev_tgt,ether_type,u_vid,u_mask,s_vid,s_mask,action,new_vid,new_vid_actions):
+def egress_user_port_tbl(eg_user_port_tbl,dev_tgt,ether_type,u_vid,u_mask,s_vid,s_mask,action,new_vid_actions,new_vid=0):
     if action in new_vid_actions:
         if 'modify' in action:
             new_vid+=50
@@ -123,24 +123,6 @@ def main():
     initial_ingress_port = interfaces[1]
     selected_node = 1
 
-    ports_config = {
-        "1": {
-            # "ingress_port": 64,
-            "ingress_port": ports_data['ingress_port'],
-            # user_port | core_port | transit_port | edge_port
-            "ingress_port_md": [0,0,0,1],
-            # "egress_port":66,
-            "egress_port": ports_data['egress_port'],
-            # user_port| p4_sw_port | transit_port
-            "egress_port_md": [1,0,0],
-            #eth type, u_vlan, u_vlan mask, s_vlan, s_vlan mask
-            "pkt_values": [0x88a8,0,0x0,900,0xFF],
-            "action": "rm_s_vlan_modify_u_vlan"
-        }
-    }
-
-
-
     #=================Packet details=================
     pkt_override = {
         "ethernet": {
@@ -177,23 +159,129 @@ def main():
         }    
     }
 
+    eth_type = pkt_override['ethernet']['ether_type']
+    u_vid = 0 
+    u_mask = 0x0
+    s_vid = 0
+    s_mask = 0x0
+
+    if pkt_override['s_vlan']['valid']:
+        s_vid = pkt_override['s_vlan']['vid']
+        s_mask = 0xFF
+    if pkt_override['u_vlan']['valid']:
+        u_vid = pkt_override['u_vlan']['vid']
+        u_mask = 0xFF    
+
+
+    ports_config = {
+        "1": {
+            # "ingress_port": 64,
+            "ingress_port": ports_data['ingress_port'],
+            # user_port | core_port | transit_port | edge_port
+            "ingress_port_md": [0,0,0,1],
+            # "egress_port":66,
+            "egress_port": ports_data['egress_port'],
+            # user_port| p4_sw_port | transit_port
+            "egress_port_md": [1,0,0],
+            #eth type, u_vlan, u_vlan mask, s_vlan, s_vlan mask
+            "pkt_values": [eth_type, u_vid, u_mask, s_vid, s_mask],
+            "action": "rm_s_vlan_modify_u_vlan"
+        }
+    }
+
+
+
     #===============P4Runtime connection================
     interface, dev_tgt, bfrt_info = p4f.gc_connect()
 
     #===============Clear tables================
     p4f.clear_all_tables(bfrt_info, dev_tgt)
 
-    #=====================================================
-    #=====================Tables==========================
+    #---------------------------------------------------------------------------------------------------------------------------
+    #================================================== T A B L E S ============================================================
+    #---------------------------------------------------------------------------------------------------------------------------
 
-    #============ INGRESS PORT TABLE ===============
-    #-----------------------------------------------
+
+    #============================================ I N G R E S S    T A B L E S =================================================
+    #---------------------------------------------------------------------------------------------------------------------------
     ig_port_info_tbl_name = 'pipe.Ingress.ig_port_info_tbl'
     ig_port_info_tbl_actions = ['set_port_md']
     ig_action = ig_port_info_tbl_actions[0]
     #---------------------------------------------------
     ig_port_info_tbl = bfrt_info.table_get(ig_port_info_tbl_name)
     ig_port_info_tbl.entry_del(dev_tgt,[])
+
+    #=====================================================
+    #=====================Stages==========================
+    # ====== Stage 1: User Port? ====== 
+    # N/A
+
+
+
+    # ====== Stage 2: Has Polka ID? ====== 
+    # N/A
+
+
+
+    # ====== Stage 3: Topology Discovery? ======
+    # N/A
+
+
+
+    # ====== Stage 3: Link Continuity Test? ======
+    # N/A
+
+
+
+    # ====== Stage 4: Partner-Provided Link? ======
+    # N/A
+
+
+
+    # ====== Stage 5: SDN Trace? ======
+    # N/A
+
+
+
+    # ====== Stage 6: Contention Flow? ======
+    # N/A
+
+
+
+    # ====== Stage 7: Port Loop? ======
+    # N/A
+
+
+
+    # ====== Stage 7: VLAN Loop? ======
+    # N/A
+
+
+
+    # ====== Stage 8: Flow Mirror? ======
+    # N/A
+
+
+
+    # ====== Stage 9: Port Mirror? ======
+    # N/A
+
+
+
+
+    # ====== Stage 10: No Polka - Destination Endpoint? ======
+    # N/A
+
+
+
+    # ====== Stage 11: Polka - Destination Endpoint? ======  
+    # N/A
+
+
+
+
+    #============================================== E G R E S S    T A B L E S =================================================
+    #---------------------------------------------------------------------------------------------------------------------------
 
     #============= EGRESS PORT TABLE ===============
     #-----------------------------------------------
@@ -246,11 +334,11 @@ def main():
     #Iterate through the ports_config dictionary
     for port, config in ports_config.items():
         ingress_port = config['ingress_port']
-        ig_user_port, ig_core_port, ig_transit_port, ig_edge_port = config['ingress_port_md']
+        ig_user_port = config['ingress_port_md'][0]
         egress_port = config['egress_port']
         eg_user_port, eg_p4_sw_port, eg_transit_port = config['egress_port_md']
         print(f"Ingress port: {ingress_port}")
-        print(f"Ig User Port: {ig_user_port}, Ig Core Port: {ig_core_port}, Ig Transit Port: {ig_transit_port}, Ig Edge Port: {ig_edge_port}")
+        print(f"Ig User Port: {ig_user_port}")
         print(f"Egress port: {egress_port}")
         print(f"Eg User Port: {eg_user_port}, Eg P4 SW Port: {eg_p4_sw_port}, Eg Transit Port: {eg_transit_port}")
 
@@ -259,7 +347,7 @@ def main():
 
         current_u_vid = pkt_override['u_vlan']['vid']
         #Add entries to the ingress port table
-        ig_set_port_md(ig_port_info_tbl,dev_tgt,ingress_port,ig_user_port,ig_core_port,ig_transit_port,ig_edge_port,egress_port,'set_port_md')
+        ig_set_port_md(ig_port_info_tbl,dev_tgt,ingress_port,ig_user_port,egress_port,'set_port_md')
 
         #Add entries to the egress port table
         eg_set_port_md(eg_edge_port_tbl,dev_tgt,egress_port,eg_user_port,eg_p4_sw_port,eg_transit_port,'set_port_md')

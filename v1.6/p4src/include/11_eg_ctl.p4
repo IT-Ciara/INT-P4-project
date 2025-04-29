@@ -358,6 +358,9 @@ control Egress(
         else if(meta.transit_port==1){
             eg_transit_port_tbl.apply();
         }
+        else if(hdr.mirror_md.isValid() && (eg_intr_md.egress_port==EXPORT_INT1||eg_intr_md.egress_port==EXPORT_INT2)){
+            export_int();
+        }
         rm_md();
     }
 }

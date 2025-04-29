@@ -62,7 +62,8 @@ control Ingress(
         ig_dprsr_md.mirror_type = MIRROR_TYPE_I2E;
         meta.pkt_type = PKT_TYPE_MIRROR;
     }
-    action set_md(PortId_t egress_port, bit<1> ing_mir, MirrorId_t ing_ses, bit<1> egr_mir, MirrorId_t egr_ses) {
+    action set_md(PortId_t egress_port, bit<1> ing_mir, 
+    MirrorId_t ing_ses, bit<1> egr_mir, MirrorId_t egr_ses) {
         ig_tm_md.ucast_egress_port = egress_port;
         meta.do_ing_mirroring = ing_mir;
         meta.ing_mir_ses = ing_ses;
@@ -100,6 +101,7 @@ control Ingress(
     // ===== Stage 4: Partner provided link? ======
     action set_user_port(){
         meta.user_port = 1;
+        meta.eval_port_mirror = 1;
         // set_output_port(10);
         ig_partner_provided_link_tbl_counter.count();
     }
@@ -149,7 +151,8 @@ control Ingress(
         hdr.bridged_md.pkt_type = PKT_TYPE_NORMAL;
         meta.eval_port_mirror = 1;
     }
-    action set_md_port_mirror(PortId_t egress_port, bit<1> ing_mir, MirrorId_t ing_ses, bit<1> egr_mir, MirrorId_t egr_ses) {
+    action set_md_port_mirror(PortId_t egress_port, bit<1> ing_mir, MirrorId_t ing_ses, 
+    bit<1> egr_mir, MirrorId_t egr_ses) {
         ig_tm_md.ucast_egress_port = egress_port;
         meta.do_ing_mirroring = ing_mir;
         meta.ing_mir_ses = ing_ses;
@@ -244,6 +247,7 @@ control Ingress(
             set_user_port;
             rm_s_vlan;
         }
+        default_action = set_user_port;
         size = 100;
         counters = ig_partner_provided_link_tbl_counter;
     } 
@@ -347,9 +351,7 @@ control Ingress(
                     if(ig_link_continuity_test_tbl.apply().miss){
                         //===== Stage 4: Partner provided link? ======
                         ig_partner_provided_link_tbl.apply();
-                        // if(ig_partner_provided_link_tbl.apply().hit){
-                            // meta.user_port = 1;
-                        // }
+                        meta.eval_port_mirror = 1;
                     }
                 }
             }
@@ -367,13 +369,11 @@ control Ingress(
                         //===== Stage 7: VLAN loop? ======
                         if(ig_vlan_loop_tbl.apply().miss){
                             //===== Stage 8: Flow mirror? ======
-                            if(ig_intr_md.resubmit_flag == 0){
-                                ig_flow_mirror_tbl.apply();
-                            }
-                            if(meta.do_ing_mirroring == 1){
-                                set_mirror_type();
-                            }
-                            set_normal_pkt_flow_mirror();
+                            ig_flow_mirror_tbl.apply();
+                            // if(meta.do_ing_mirroring == 1){
+                            //     set_mirror_type();
+                            // }
+                            // set_normal_pkt_flow_mirror();
                         }
                     }
                 }
@@ -381,15 +381,15 @@ control Ingress(
         }
         //===== Stage 9: Port Mirror? ======
         if(meta.eval_port_mirror == 1){
-            if(ig_intr_md.resubmit_flag == 0){
-                ig_port_mirror_tbl.apply();
-            }
-            if(meta.do_ing_mirroring == 1){
-                set_mirror_type();
-            }
+            ig_port_mirror_tbl.apply();
         }
         if(hdr.polka.isValid()){
-            mod_output_port(meta.polka_routeid);
+            mod_output_port(meta.polka_routeid);           
         }
+            //==== Stage 11: Polka - Destination Endpoint? ====== No
+        ig_output_polka_port_tbl.apply();
+        if(meta.do_ing_mirroring == 1){
+            set_mirror_type();
+        }    
     }
 }

@@ -13,7 +13,6 @@ parser EgressParser(packet_in        pkt,
         meta.p4_sw_port = 0;
         meta.transit_port = 0;
 
-
         transition parse_metadata;
     }
     state parse_metadata {
@@ -30,7 +29,8 @@ parser EgressParser(packet_in        pkt,
     }
     state parse_mirror_md {
         mirror_h mirror_md;
-        pkt.extract(mirror_md);
+        // pkt.extract(mirror_md);
+        pkt.extract(hdr.mirror_md);
         transition parse_ethernet;
     }
     state parse_ig_metadata {
