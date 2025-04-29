@@ -51,8 +51,6 @@ control Ingress(
         meta.user_port = user_port;
         set_output_port(egress_port);
     }
-
-
     action set_normal_pkt() {
         hdr.bridged_md.setValid();
         hdr.bridged_md.pkt_type = PKT_TYPE_NORMAL;
@@ -75,7 +73,6 @@ control Ingress(
         ig_user_port_tbl_counter.count();
         meta.user_port = user_port;
     }  
-
     action mod_output_port(bit<128> routeid) {
         bit<16> nbase=0;
         bit<64> ncount=4294967296*2;
@@ -102,12 +99,9 @@ control Ingress(
     action set_user_port(){
         meta.user_port = 1;
         meta.eval_port_mirror = 1;
-        // set_output_port(10);
         ig_partner_provided_link_tbl_counter.count();
     }
     action rm_s_vlan(PortId_t egress_port){
-        // hdr.ig_metadata.setValid();
-        // hdr.ig_metadata.rm_s_vlan = 1;
         meta.user_port = 1;
         hdr.ethernet.ether_type = hdr.s_vlan.ether_type;
         hdr.s_vlan.setInvalid();
@@ -144,7 +138,6 @@ control Ingress(
         hdr.bridged_md.egr_mir_ses = egr_ses;
         ig_flow_mirror_tbl_counter.count();
     } 
-
     //===== Stage 9: Port Mirror? ======
     action set_normal_pkt_flow_mirror() {
         hdr.bridged_md.setValid();
@@ -160,56 +153,17 @@ control Ingress(
         hdr.bridged_md.egr_mir_ses = egr_ses;
         ig_port_mirror_tbl_counter.count();
     } 
-    // ===== Stage 10: No Polka - Destination Endpoint? ======
-    action forward(PortId_t egress_port
-                    // bit<1> endpoint
-                    ){
-        ig_tm_md.ucast_egress_port = egress_port;
-    }
-    action add_u_vlan(bit<12> new_vid, PortId_t egress_port
-                    // bit<1> endpoint
-    ){
-        hdr.u_vlan.setValid();
-        hdr.u_vlan.vid = new_vid;
-        hdr.u_vlan.dei = 0;
-        hdr.u_vlan.pri = 0;
-        hdr.u_vlan.ether_type = hdr.ethernet.ether_type;
-        hdr.ethernet.ether_type = 0x8100;
-        ig_tm_md.ucast_egress_port = egress_port;
-    }
-    action modify_u_vlan(bit<12> new_vid, PortId_t egress_port
-                        // bit<1> endpoint
-    ){
-        hdr.u_vlan.vid = new_vid;
-        ig_tm_md.ucast_egress_port = egress_port;
-    } 
-
-    action set_p4_output_port(bit<1> p4_sw_port){
-        meta.o_p4_sw_port = p4_sw_port;
-    }
-
     //============================== T A B L E S ================================
     // =====Ingress General Table=====
+    // ====== Stage 1: User Port? ======    
     table ig_port_info_tbl {
         key = {
             ig_intr_md.ingress_port : exact;
         }
         actions = {
             set_port_md;
-            // set_p4_output_port;
         }
         size = 16;
-    }
-    // ====== Stage 1: User Port? ======
-    table ig_user_port_tbl{ 
-        key = {
-            ig_intr_md.ingress_port: exact;
-        }
-        actions = {
-            user_port;
-        }
-        counters = ig_user_port_tbl_counter;
-        size = 8;        
     }
     // ====== Stage 3: Topology Discovery? ======
     table ig_topology_discovery_tbl{

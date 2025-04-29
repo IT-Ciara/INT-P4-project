@@ -103,7 +103,6 @@ control Egress(
         rm_int();
     }
     action add_s_vlan(bit<12> new_vid){
-        // rm_polka_int();
         hdr.s_vlan.setValid();
         hdr.s_vlan.ether_type = hdr.ethernet.ether_type;
         hdr.s_vlan.vid = new_vid;
