@@ -26,13 +26,10 @@ control Egress(
 //========================== C O U N T E R S ================================
 
 //============================ A C T I O N S ================================
-    action rm_ig_md(){
-        hdr.ig_metadata.setInvalid();  
-    }
     action rm_md(){
         hdr.bridged_md.setInvalid();
         hdr.mirror_md.setInvalid();
-        rm_ig_md();
+        hdr.ig_metadata.setInvalid();  
     }  
     // =====Egress General Actions=====
     action set_port_md(bit<1> user_port, bit<1> p4_sw_port, 
@@ -187,14 +184,7 @@ control Egress(
         add_int_shim();
         add_polka();        
     }
-    // ==== Stg 4: Partner-provided link? ====
-    action rm_s_vlan_add_int(){
-        hdr.ig_metadata.setInvalid();
-        hdr.custom_int_shim.setValid();
-        hdr.custom_int_shim.next_hdr = hdr.ethernet.ether_type;
-        hdr.ethernet.ether_type = ETHER_TYPE_INT;
-        add_int_shim();
-    }    
+    // ==== Stg 4: Partner-provided link? ==== 
     action rm_s_vlan_add_int_polka(){
         hdr.ethernet.ether_type = hdr.s_vlan.ether_type;
         hdr.s_vlan.setInvalid();

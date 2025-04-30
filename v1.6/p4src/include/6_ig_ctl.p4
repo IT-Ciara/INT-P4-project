@@ -20,8 +20,6 @@ control Ingress(
     //========================== R E G I S T E R S ==============================
 
     //========================== C O U N T E R S ================================
-    // ====== Stage 1: User Port? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_user_port_tbl_counter;
     // ===== Stage 3: Topology Discovery? ======
     DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_topology_discovery_tbl_counter;
     // ===== Stage 3: Link continuity test? ======
@@ -46,6 +44,7 @@ control Ingress(
     action set_output_port(PortId_t port) {
         ig_tm_md.ucast_egress_port = port;
     }    
+    // ====== Stage 1: User Port? ======    
     action set_port_md(bit<1> user_port, 
                        PortId_t egress_port) {
         meta.user_port = user_port;
@@ -61,18 +60,14 @@ control Ingress(
         meta.pkt_type = PKT_TYPE_MIRROR;
     }
     action set_md(PortId_t egress_port, bit<1> ing_mir, 
-    MirrorId_t ing_ses, bit<1> egr_mir, MirrorId_t egr_ses) {
+    MirrorId_t ing_ses, bit<1> egr_mir, 
+    MirrorId_t egr_ses) {
         ig_tm_md.ucast_egress_port = egress_port;
         meta.do_ing_mirroring = ing_mir;
         meta.ing_mir_ses = ing_ses;
         hdr.bridged_md.do_egr_mirroring = egr_mir;
         hdr.bridged_md.egr_mir_ses = egr_ses;
     }
-    // ====== Stage 1: User Port? ======
-    action user_port(bit <1> user_port){ 
-        ig_user_port_tbl_counter.count();
-        meta.user_port = user_port;
-    }  
     action mod_output_port(bit<128> routeid) {
         bit<16> nbase=0;
         bit<64> ncount=4294967296*2;
@@ -139,11 +134,6 @@ control Ingress(
         ig_flow_mirror_tbl_counter.count();
     } 
     //===== Stage 9: Port Mirror? ======
-    action set_normal_pkt_flow_mirror() {
-        hdr.bridged_md.setValid();
-        hdr.bridged_md.pkt_type = PKT_TYPE_NORMAL;
-        meta.eval_port_mirror = 1;
-    }
     action set_md_port_mirror(PortId_t egress_port, bit<1> ing_mir, MirrorId_t ing_ses, 
     bit<1> egr_mir, MirrorId_t egr_ses) {
         ig_tm_md.ucast_egress_port = egress_port;
@@ -292,6 +282,7 @@ control Ingress(
 
     apply{
         //Set the metadata related to the input packet
+        //===== Stage 1: User Port? ======
         ig_port_info_tbl.apply();
         set_normal_pkt();
         if(meta.user_port==0){
@@ -323,6 +314,7 @@ control Ingress(
                         if(ig_vlan_loop_tbl.apply().miss){
                             //===== Stage 8: Flow mirror? ======
                             ig_flow_mirror_tbl.apply();
+                            meta.eval_port_mirror = 1;
                         }
                     }
                 }

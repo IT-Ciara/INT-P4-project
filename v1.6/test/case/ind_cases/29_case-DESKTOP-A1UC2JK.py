@@ -114,10 +114,10 @@ def egress_transit_port_tbl(eg_transit_port_tbl,dev_tgt,ether_type,eg_transit_po
 
 
 #===============================================================================
-#                         C A S E 42: 
+#                         C A S E 29: 
 #===============================================================================
 def main():
-    p4f.print_console("blue","Case 42")
+    p4f.print_console("blue","Case 29")
     with open(f'../polka/route_info_{TARGET}.json', 'r') as f:
         route_data = json.load(f)    
 
@@ -129,13 +129,30 @@ def main():
     egr_mir=0
     egr_ses=0 
 
+
+    ports_config = {
+        "1": {
+            # "ingress_port": 64,
+            "ingress_port": ports_data['ingress_port'],
+            "ingress_port_md": [0],
+            # "egress_port":66,
+            "egress_port": ports_data['egress_port'],
+            "egress_port_md": [0,0,0],
+            #eth type, u_vlan, u_vlan mask, s_vlan, s_vlan mask
+            "pkt_values": [0x8842,0,0x0,0,0x0],
+            "action": "nothing"
+        }
+    }
+
+
+
     #=================Packet details=================
     pkt_override = {
         "ethernet": {
             "valid": True,
             "dst_addr": "aa:aa:aa:aa:aa:aa",
             "src_addr": "bb:bb:bb:bb:bb:bb",
-            "ether_type": 0x8100
+            "ether_type": 0x88CC
         },
         "s_vlan": {
             "valid":False,
@@ -153,53 +170,24 @@ def main():
             "next_hdr": 0x800,
         },          
         "u_vlan": {
-            "valid": True,
+            "valid": False,
             "vid": 200,
             "ether_type": 0x800
         },
         "ipv4": {
-            "valid": True,
+            "valid": False,
             "src_addr": "192.168.233.2",
             "dst_addr": "192.168.233.3",
             "protocol": 17
         },
         "lldp": {
-            "valid": False,
+            "valid": True,
             "chassis_id": "00:11:22:33:44:55",
             "port_id": "eth0",
             "ttl": 120
         } 
+
     }
-
-    eth_type = pkt_override['ethernet']['ether_type']
-    u_vid = 0 
-    u_mask = 0x0
-    s_vid = 0
-    s_mask = 0x0
-
-    if pkt_override['s_vlan']['valid']:
-        s_vid = pkt_override['s_vlan']['vid']
-        s_mask = 0xFF
-    if pkt_override['u_vlan']['valid']:
-        u_vid = pkt_override['u_vlan']['vid']
-        u_mask = 0xFF 
-
-    ports_config = {
-        "1": {
-            # "ingress_port": 64,
-            "ingress_port": ports_data['ingress_port'],
-            "ingress_port_md": [1],
-            # "egress_port":66,
-            "egress_port": ports_data['egress_port'],
-            "egress_port_md": [0,0,0],
-            #eth type, u_vlan, u_vlan mask, s_vlan, s_vlan mask
-            "pkt_values": [eth_type, u_vid, u_mask, s_vid, s_mask],
-            "action": "nothing"
-        }
-    }
-
-
-
 
     #===============P4Runtime connection================
     interface, dev_tgt, bfrt_info = p4f.gc_connect()
@@ -237,7 +225,22 @@ def main():
 
 
     # ====== Stage 3: Topology Discovery? ======
-    # N/A
+    # YES
+    stg_3_ig_link_continuity_test_tbl_name = 'Ingress.ig_link_continuity_test_tbl'
+    stg_3_ig_link_continuity_test_actions = ['link_continuity_test']
+
+    #===================Add entries=====================
+    #---------------------------------------------------
+    p4f.print_console("grey","Adding entries to tables",100,'-')
+    # Add entries to the tables
+    stg_3_ig_link_continuity_test_tbl = bfrt_info.table_get(stg_3_ig_link_continuity_test_tbl_name)
+    stg_3_ig_link_continuity_test_tbl.entry_del(dev_tgt,[])
+    key = stg_3_ig_link_continuity_test_tbl.make_key([gc.KeyTuple("ig_intr_md.ingress_port", ports_data['ingress_port']), 
+                                                    gc.KeyTuple("hdr.ethernet.ether_type", pkt_override['ethernet']['ether_type']),
+                                                    ])
+    data = stg_3_ig_link_continuity_test_tbl.make_data([],action_name=f"Ingress.{stg_3_ig_link_continuity_test_actions[0]}")    
+    stg_3_ig_link_continuity_test_tbl.entry_add(dev_tgt, [key], [data])
+    print("Link continuity test entry added successfully.") 
 
 
 
@@ -267,20 +270,7 @@ def main():
 
 
     # ====== Stage 7: VLAN Loop? ======
-    # YES
-    stg_7_vlan_loop_ig_tbl_name = "Ingress.ig_vlan_loop_tbl"
-    stg_7_vlan_loop_ig_actions = ['send_back_vlan']
-    #===================Add entries=====================
-    #---------------------------------------------------
-    stg_7_vlan_loop_ig_tbl = bfrt_info.table_get(stg_7_vlan_loop_ig_tbl_name)
-    stg_7_vlan_loop_ig_tbl.entry_del(dev_tgt,[])
-
-    key = stg_7_vlan_loop_ig_tbl.make_key([gc.KeyTuple("ig_intr_md.ingress_port", ports_data['ingress_port']),
-                                           gc.KeyTuple("hdr.u_vlan.vid", int(pkt_override['u_vlan']['vid'])),
-                                           gc.KeyTuple("hdr.s_vlan.vid", 0),
-                                           ])
-    data = stg_7_vlan_loop_ig_tbl.make_data([],action_name=f"Ingress.{stg_7_vlan_loop_ig_actions[0]}")
-    stg_7_vlan_loop_ig_tbl.entry_add(dev_tgt, [key], [data])
+    # N/A
 
 
 
@@ -538,7 +528,7 @@ def main():
     p4f.print_console("grey","Starting multi-interface sniffer",100,'-')
     ingress_veth = f"{initial_ingress_port}"
     #Exclude the ingress port from interfaces
-    # interfaces.remove(ingress_veth)
+    interfaces.remove(ingress_veth)
     sniff_threads,capture_results = sp.start_multi_sniffer_in_background(interfaces, timeout=7)
     # Give sniffers a moment to start up
     time.sleep(3)

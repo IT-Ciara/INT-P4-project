@@ -21,7 +21,6 @@ from case_functions import sniff_pkts as sp  # No need for relative import
 #               "veth30", "veth32","veth250"]
 # List of interfaces to sniff
 # interfaces = ["enp4s0f0","enp4s0f1"]
-
 import argparse
 
 # Parse command-line arguments
@@ -114,20 +113,31 @@ def egress_transit_port_tbl(eg_transit_port_tbl,dev_tgt,ether_type,eg_transit_po
 
 
 #===============================================================================
-#                         C A S E 41: 
+#                         C A S E 2: 
 #===============================================================================
 def main():
-    p4f.print_console("blue","Case 41")
+    p4f.print_console("blue","Case 2")
     with open(f'../polka/route_info_{TARGET}.json', 'r') as f:
         route_data = json.load(f)    
 
     initial_ingress_port = interfaces[1]
     selected_node = 1
 
-    ing_mir=0
-    ing_ses=0
-    egr_mir=0
-    egr_ses=0 
+    ports_config = {
+        "1": {
+            # "ingress_port": 64,
+            "ingress_port": ports_data['ingress_port'],
+            # user_port | core_port | transit_port | edge_port
+            "ingress_port_md": [1],
+            # "egress_port":66,
+            "egress_port": ports_data['egress_port'],
+            # user_port| p4_sw_port | transit_port
+            "egress_port_md": [1,0,0],
+            #eth type, u_vlan, u_vlan mask, s_vlan, s_vlan mask
+            "pkt_values": [0x800,0,0x0,0,0x0],
+            "action": "nothing"
+        }
+    }
 
 
 
@@ -142,7 +152,7 @@ def main():
         "s_vlan": {
             "valid":False,
             "vid": 900,
-            "ether_type": 0x8100
+            "ether_type": 0x800
         }, 
         "polka":{
             "valid":False,
@@ -153,10 +163,10 @@ def main():
             "valid": False,
             "int_count": 1,
             "next_hdr": 0x800,
-        },          
+        },        
         "u_vlan": {
             "valid": False,
-            "vid": 500,
+            "vid": 200,
             "ether_type": 0x800
         },
         "ipv4": {
@@ -164,43 +174,8 @@ def main():
             "src_addr": "192.168.233.2",
             "dst_addr": "192.168.233.3",
             "protocol": 17
-        },
-        "lldp": {
-            "valid": False,
-            "chassis_id": "00:11:22:33:44:55",
-            "port_id": "eth0",
-            "ttl": 120
-        } 
+        }    
     }
-
-    eth_type = pkt_override['ethernet']['ether_type']
-    u_vid = 0 
-    u_mask = 0x0
-    s_vid = 0
-    s_mask = 0x0
-
-    if pkt_override['s_vlan']['valid']:
-        s_vid = pkt_override['s_vlan']['vid']
-        s_mask = 0xFF
-    if pkt_override['u_vlan']['valid']:
-        u_vid = pkt_override['u_vlan']['vid']
-        u_mask = 0xFF    
-    ports_config = {
-        "1": {
-            # "ingress_port": 64,
-            "ingress_port": ports_data['ingress_port'],
-            "ingress_port_md": [0],
-            # "egress_port":66,
-            "egress_port": ports_data['egress_port'],
-            "egress_port_md": [0,1,0],
-            #eth type, u_vlan, u_vlan mask, s_vlan, s_vlan mask
-            "pkt_values": [eth_type, u_vid, u_mask, s_vid, s_mask],
-            "action": "add_int_polka"
-            # "action": "nothing"
-        }
-    }
-
-
 
     #===============P4Runtime connection================
     interface, dev_tgt, bfrt_info = p4f.gc_connect()
@@ -213,9 +188,6 @@ def main():
     #---------------------------------------------------------------------------------------------------------------------------
 
 
-    #============================================ I N G R E S S    T A B L E S =================================================
-    #---------------------------------------------------------------------------------------------------------------------------
-    
     #============================================ I N G R E S S    T A B L E S =================================================
     #---------------------------------------------------------------------------------------------------------------------------
     ig_port_info_tbl_name = 'pipe.Ingress.ig_port_info_tbl'
@@ -296,6 +268,9 @@ def main():
 
     #============================================== E G R E S S    T A B L E S =================================================
     #---------------------------------------------------------------------------------------------------------------------------
+
+    #============= EGRESS PORT TABLE ===============
+    #-----------------------------------------------
     eg_port_info_tbl_name = 'pipe.Egress.eg_port_info_tbl'
     eg_port_info_tbl_actions = ['set_port_md']
     eg_action = eg_port_info_tbl_actions[0]
@@ -355,8 +330,8 @@ def main():
 
         eth_type, u_vid, u_mask, s_vid, s_mask = config['pkt_values']
         print(f"Packet values: Eth Type: {hex(eth_type)}, U VID: {u_vid}, U Mask: {u_mask}, S VID: {s_vid}, S Mask: {s_mask}")
-
-
+        current_u_vid = 0
+        # current_u_vid = pkt_override['u_vlan']['vid']
         #Add entries to the ingress port table
         ig_set_port_md(ig_port_info_tbl,dev_tgt,ingress_port,ig_user_port,egress_port,'set_port_md')
 
@@ -367,7 +342,7 @@ def main():
         print(f"Action: {eg_action}")
         if eg_user_port==1:
             #Add entries to the egress user port table
-            egress_user_port_tbl(eg_user_port_tbl,dev_tgt,eth_type,u_vid,u_mask,s_vid,s_mask,eg_action,new_vid_actions)
+            egress_user_port_tbl(eg_user_port_tbl,dev_tgt,eth_type,u_vid,u_mask,s_vid,s_mask,eg_action,new_vid=current_u_vid,new_vid_actions=new_vid_actions)
         elif eg_p4_sw_port==1:
             #Add entries to the egress p4 sw port table
             egress_p4_sw_port_tbl(eg_p4_sw_port_tbl,dev_tgt,eth_type,eg_p4_sw_port,eg_action,ingress_port)
