@@ -10,7 +10,7 @@ The current implementation is available in the [v1.6](./v1.6/) folder
 
 The current pipeline structure (v1.6) is illustrated below:
 
-![Stages](./Figures/amlight-pipeline-Progress-Stages.drawio.png)
+![Stages](./Figures/current.png)
 
 #### Pipeline Stages
 
