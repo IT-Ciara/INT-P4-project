@@ -1,6 +1,0 @@
-{
-    "interfaces": ["veth250","veth32","veth0","veth2","veth4","veth6","veth8","veth10","veth12","veth14","veth16","veth18","veth20","veth22","veth24",
-    "veth26","veth28","veth30"],
-    "ingress_port": 24,
-    "egress_port": 2 
-}

@@ -31,8 +31,10 @@ const mirror_type_t MIRROR_TYPE_I2E = 1;
 const mirror_type_t MIRROR_TYPE_E2E = 2;
 
 
-const PortId_t EXPORT_INT1 = 13;
-const PortId_t EXPORT_INT2 = 16;
+const PortId_t EXPORT_INT1 = 16;
+// const PortId_t EXPORT_INT2 = 16;
 
-
+//=============== INDEX COUNTER =========================
+typedef bit<1> index_t;
+typedef bit<2> index2_t;
 

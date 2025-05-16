@@ -19,25 +19,61 @@ control Ingress(
     Hash<bit<16>>(HashAlgorithm_t.CUSTOM, poly) hash;     
     //========================== R E G I S T E R S ==============================
 
-    //========================== C O U N T E R S ================================
+    //========================== D I R E C T    C O U N T E R S ================================
+    // ===== Stage 1: User Port? ======
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_port_info_tbl_counter;
     // ===== Stage 3: Topology Discovery? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_topology_discovery_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_topology_discovery_tbl_counter;
     // ===== Stage 3: Link continuity test? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_link_continuity_test_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_link_continuity_test_tbl_counter;
     // ===== Stage 4: Partner provided link? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_partner_provided_link_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_partner_provided_link_tbl_counter;
     // ====== Stage 5: SDN trace? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_sdn_trace_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_sdn_trace_tbl_counter;
     // ===== Stage 6: Contention flow? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) drop_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_contention_flow_tbl_drop_counter;
     // ===== Stage 7: Port loop? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_port_loop_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_port_loop_tbl_counter;
     // ===== Stage 7: VLAN loop? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_vlan_loop_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_vlan_loop_tbl_counter;
     // ===== Stage 8: Flow mirror? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_flow_mirror_tbl_counter; 
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_flow_mirror_tbl_counter; 
     //===== Stage 9: Port Mirror? ======
-    DirectCounter<bit<64>>(CounterType_t.PACKETS_AND_BYTES) ig_port_mirror_tbl_counter;
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_port_mirror_tbl_counter;
+    //==== Stage 11: Polka - Destination Endpoint? ====== No
+    DirectCounter<bit<64>>(CounterType_t.PACKETS) ig_output_polka_port_tbl_counter;
+
+
+    //========================== I N D I R E C T    C O U N T E R S ================================
+    // index_t index = 0 ;    
+
+    // index2_t index2 = 0;
+
+    // Counter<bit<64>,index_t>(15,CounterType_t.PACKETS_AND_BYTES) miss_counter;
+    // ===== Stage 1: User Port? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_port_info_tbl_miss_counter;
+    // ===== Stage 2: has Polka ID? =====
+    Counter<bit<64>,index2_t>(4,CounterType_t.PACKETS_AND_BYTES) has_polka_id_tbl_counter;
+    // ===== Stage 3: Topology Discovery? ======    
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_topology_discovery_tbl_miss_counter;
+    // ===== Stage 3: Link continuity test? ======    
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_link_continuity_test_tbl_miss_counter;
+    // ===== Stage 4: Partner provided link? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_partner_provided_link_tbl_miss_counter;
+    // ====== Stage 5: SDN trace? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_sdn_trace_tbl_miss_counter;
+    // ===== Stage 6: Contention flow? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_contention_flow_tbl_miss_counter;
+    // ===== Stage 7: Port loop? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_port_loop_tbl_miss_counter;
+    // ===== Stage 7: VLAN loop? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_vlan_loop_tbl_miss_counter;
+    // ===== Stage 8: Flow mirror? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_flow_mirror_tbl_miss_counter;
+    //===== Stage 9: Port Mirror? ======
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_port_mirror_tbl_miss_counter;
+    //==== Stage 11: Polka - Destination Endpoint? ====== No
+    Counter<bit<64>,index_t>(1,CounterType_t.PACKETS_AND_BYTES) ig_output_polka_port_tbl_miss_counter;
 
     //============================ A C T I O N S ================================
     // =====Ingress General Actions=====
@@ -49,6 +85,7 @@ control Ingress(
                        PortId_t egress_port) {
         meta.user_port = user_port;
         set_output_port(egress_port);
+        ig_port_info_tbl_counter.count();
     }
     action set_normal_pkt() {
         hdr.bridged_md.setValid();
@@ -67,6 +104,8 @@ control Ingress(
         meta.ing_mir_ses = ing_ses;
         hdr.bridged_md.do_egr_mirroring = egr_mir;
         hdr.bridged_md.egr_mir_ses = egr_ses;
+        ig_output_polka_port_tbl_counter.count();
+        
     }
     action mod_output_port(bit<128> routeid) {
         bit<16> nbase=0;
@@ -91,9 +130,9 @@ control Ingress(
         ig_tm_md.ucast_egress_port = CPU_PORT_VALUE; //send to cpu
     }  
     // ===== Stage 4: Partner provided link? ======
-    action set_user_port(){
+    action set_user_port(PortId_t egress_port){
         meta.user_port = 1;
-        meta.eval_port_mirror = 1;
+        set_output_port(egress_port);
         ig_partner_provided_link_tbl_counter.count();
     }
     action rm_s_vlan(PortId_t egress_port){
@@ -111,7 +150,7 @@ control Ingress(
     // ===== Stage 6: Contention flow? ======
     action drop(){
         ig_dprsr_md.drop_ctl = 1;
-        drop_counter.count();
+        ig_contention_flow_tbl_drop_counter.count();
     }   
     // ===== Stage 7: Port loop? ======
     action send_back(){
@@ -143,6 +182,7 @@ control Ingress(
         hdr.bridged_md.egr_mir_ses = egr_ses;
         ig_port_mirror_tbl_counter.count();
     } 
+
     //============================== T A B L E S ================================
     // =====Ingress General Table=====
     // ====== Stage 1: User Port? ======    
@@ -154,6 +194,7 @@ control Ingress(
             set_port_md;
         }
         size = 16;
+        counters = ig_port_info_tbl_counter;
     }
     // ====== Stage 3: Topology Discovery? ======
     table ig_topology_discovery_tbl{
@@ -191,7 +232,7 @@ control Ingress(
             set_user_port;
             rm_s_vlan;
         }
-        default_action = set_user_port;
+        default_action = set_user_port(64);
         size = 100;
         counters = ig_partner_provided_link_tbl_counter;
     } 
@@ -220,7 +261,7 @@ control Ingress(
         actions = {
             drop;
         }
-        counters = drop_counter;
+        counters = ig_contention_flow_tbl_drop_counter;
         size = 512;
     }   
     // ===== Stage 7: Port loop? ======
@@ -278,56 +319,67 @@ control Ingress(
             set_md;
         }
         size=16;
+        counters = ig_output_polka_port_tbl_counter;
     }
-
     apply{
-        //Set the metadata related to the input packet
         //===== Stage 1: User Port? ======
         ig_port_info_tbl.apply();
         set_normal_pkt();
         if(meta.user_port==0){
+            ig_port_info_tbl_miss_counter.count(0);
             //===== Stage 2: has Polka ID? No ======
             if(hdr.ethernet.ether_type!=ETHER_TYPE_POLKA){
+                has_polka_id_tbl_counter.count(0);
                 //===== Stage3: Topology Discovery? ======
                 if(ig_topology_discovery_tbl.apply().miss){
+                    ig_topology_discovery_tbl_miss_counter.count(0);
                     //===== Stage3: Link continuity test? ======
                     if(ig_link_continuity_test_tbl.apply().miss){
+                        ig_link_continuity_test_tbl_miss_counter.count(0);
                         //===== Stage 4: Partner provided link? ======
-                        ig_partner_provided_link_tbl.apply();
-                        meta.eval_port_mirror = 1;
+                        if(ig_partner_provided_link_tbl.apply().miss){
+                            ig_partner_provided_link_tbl_miss_counter.count(0);
+                        }
                     }
                 }
-            }
+            }       
             //===== Stage 2: has Polka ID? Yes ======
             else{
-                meta.eval_port_mirror = 1;
-            }            
+                has_polka_id_tbl_counter.count(1);
+            }
         }
         if(meta.user_port == 1){
             //===== Stage 5: SDN trace? ======
             if(ig_sdn_trace_tbl.apply().miss) {
+                ig_sdn_trace_tbl_miss_counter.count(0);
                 //===== Stage 6: Contention flow? ======
                 if(ig_contention_flow_tbl.apply().miss) {
+                    ig_contention_flow_tbl_miss_counter.count(0);
                     //===== Stage 7: Port loop? ======
                     if(ig_port_loop_tbl.apply().miss){
+                        ig_port_loop_tbl_miss_counter.count(0);
                         //===== Stage 7: VLAN loop? ======
                         if(ig_vlan_loop_tbl.apply().miss){
+                            ig_vlan_loop_tbl_miss_counter.count(0);
                             //===== Stage 8: Flow mirror? ======
-                            ig_flow_mirror_tbl.apply();
-                            meta.eval_port_mirror = 1;
+                            if(ig_flow_mirror_tbl.apply().miss){
+                                ig_flow_mirror_tbl_miss_counter.count(0);
+                            }
                         }
                     }
                 }
             }
         }
         //===== Stage 9: Port Mirror? ======
-        if(meta.eval_port_mirror == 1){
-            ig_port_mirror_tbl.apply();
+        if(ig_port_mirror_tbl.apply().miss){
+            ig_port_mirror_tbl_miss_counter.count(0);
         }
         if(hdr.polka.isValid()){
             mod_output_port(meta.polka_routeid);           
             //==== Stage 11: Polka - Destination Endpoint? ====== No
-            ig_output_polka_port_tbl.apply();
+            if(ig_output_polka_port_tbl.apply().miss){
+                ig_output_polka_port_tbl_miss_counter.count(0);
+            }
         }
         if(meta.do_ing_mirroring == 1){
             set_mirror_type();

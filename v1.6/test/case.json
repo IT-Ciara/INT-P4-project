@@ -1,0 +1,770 @@
+{
+    "Case": 130,
+    "User Case": "No U VLAN",
+    "Input": "P4 SW",
+    "Output": "Transit",
+    "stage_tables": {
+        "Stg1 | User port?": {
+            "value": "NO",
+            "Tables": {
+                "pipe.Ingress.ig_port_info_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_port_info_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.set_port_md",
+                            "parameters": [
+                                "user_port",
+                                "egress_port"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_port_info_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg2 | has Polka ID?": {
+            "value": "YES",
+            "Tables": {},
+            "Indirect Counters": {
+                "pipe.Ingress.has_polka_id_tbl_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg3 | Topology Discovery?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_topology_discovery_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_topology_discovery_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ethernet.ether_type",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.topology_discovery",
+                            "parameters": []
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_topology_discovery_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg3 | Link continuity test?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_link_continuity_test_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_link_continuity_test_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ethernet.ether_type",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.link_continuity_test",
+                            "parameters": []
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_link_continuity_test_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg4 | Partner-provided link?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_partner_provided_link_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_partner_provided_link_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ethernet.ether_type",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.s_vlan.vid",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.u_vlan.vid",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.set_user_port",
+                            "parameters": [
+                                "egress_port"
+                            ]
+                        },
+                        {
+                            "name": "Ingress.rm_s_vlan",
+                            "parameters": [
+                                "egress_port"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_partner_provided_link_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg5 | SDN trace?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_sdn_trace_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_sdn_trace_tbl",
+                    "keys": [
+                        {
+                            "name": "hdr.ethernet.src_addr",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.send_to_cpu",
+                            "parameters": []
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_sdn_trace_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg6 | Contention flow?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_contention_flow_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_contention_flow_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ethernet.dst_addr",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ethernet.ether_type",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.u_vlan.vid",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.s_vlan.vid",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ipv4.src_addr",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ipv4.dst_addr",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.drop",
+                            "parameters": []
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_contention_flow_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg7 | Port loop?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_port_loop_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_port_loop_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.send_back",
+                            "parameters": []
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_port_loop_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg7 | Vlan Loop?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_vlan_loop_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_vlan_loop_tbl",
+                    "keys": [
+                        {
+                            "name": "hdr.u_vlan.vid",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.s_vlan.vid",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.send_back_vlan",
+                            "parameters": []
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_vlan_loop_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg8 | Flow mirror?": {
+            "value": "",
+            "Tables": {
+                "pipe.Ingress.ig_flow_mirror_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_flow_mirror_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.set_md_flow_mirror",
+                            "parameters": [
+                                "egress_port",
+                                "ing_mir",
+                                "ing_ses",
+                                "egr_mir",
+                                "egr_ses"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_flow_mirror_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg9 | Port mirror?": {
+            "value": "YES",
+            "Tables": {
+                "pipe.Ingress.ig_port_mirror_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_port_mirror_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_intr_md.ingress_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.set_md_port_mirror",
+                            "parameters": [
+                                "egress_port",
+                                "ing_mir",
+                                "ing_ses",
+                                "egr_mir",
+                                "egr_ses"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_port_mirror_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg10 | IG:Has Polka. Export INT?": {
+            "value": "YES",
+            "Tables": {
+                "pipe.Ingress.ig_output_polka_port_tbl": {
+                    "grpc_name": "pipe.Ingress.ig_output_polka_port_tbl",
+                    "keys": [
+                        {
+                            "name": "ig_tm_md.ucast_egress_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Ingress.set_md",
+                            "parameters": [
+                                "egress_port",
+                                "ing_mir",
+                                "ing_ses",
+                                "egr_mir",
+                                "egr_ses"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Ingress.ig_output_polka_port_tbl_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg10 | Set output port type": {
+            "value": "YES",
+            "Tables": {
+                "pipe.Egress.eg_port_info_tbl": {
+                    "grpc_name": "pipe.Egress.eg_port_info_tbl",
+                    "keys": [
+                        {
+                            "name": "eg_intr_md.egress_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Egress.set_port_md",
+                            "parameters": [
+                                "user_port",
+                                "p4_sw_port",
+                                "transit_port"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Egress.eg_port_info_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg10 | Am I destination endpoint?": {
+            "value": "NO",
+            "Tables": {
+                "pipe.Egress.eg_user_port_tbl": {
+                    "grpc_name": "pipe.Egress.eg_user_port_tbl",
+                    "keys": [
+                        {
+                            "name": "hdr.ethernet.ether_type",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.u_vlan.vid",
+                            "match": "Ternary"
+                        },
+                        {
+                            "name": "hdr.s_vlan.vid",
+                            "match": "Ternary"
+                        },
+                        {
+                            "name": "$MATCH_PRIORITY",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Egress.add_u_vlan",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        },
+                        {
+                            "name": "Egress.modify_u_vlan",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        },
+                        {
+                            "name": "Egress.rm_u_vlan",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.rm_s_vlan",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.rm_s_vlan_modify_u_vlan",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        },
+                        {
+                            "name": "Egress.rm_s_vlan_u_vlan",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.rm_s_vlan_add_u_vlan",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        },
+                        {
+                            "name": "Egress.rm_polka_int",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.rm_polka_int_modify_u_vlan",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        },
+                        {
+                            "name": "Egress.rm_polka_int_u_vlan",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.rm_polka_int_add_u_vlan",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Egress.eg_user_port_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg10 | Endpoint action": {
+            "value": "",
+            "Tables": {},
+            "Indirect Counters": {}
+        },
+        "Stg10 | Is next hop polka-compatible?": {
+            "value": "NO",
+            "Tables": {
+                "pipe.Egress.eg_p4_sw_port_tbl": {
+                    "grpc_name": "pipe.Egress.eg_p4_sw_port_tbl",
+                    "keys": [
+                        {
+                            "name": "hdr.ethernet.ether_type",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ig_metadata.ig_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Egress.add_int_polka",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.rm_s_vlan_add_int_polka",
+                            "parameters": []
+                        }
+                    ]
+                },
+                "pipe.Egress.eg_int_table": {
+                    "grpc_name": "pipe.Egress.eg_int_table",
+                    "keys": [
+                        {
+                            "name": "hdr.custom_int_shim.int_count",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Egress.push_int1",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.push_int2",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.push_int3",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.push_int4",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.push_int5",
+                            "parameters": []
+                        },
+                        {
+                            "name": "Egress.set_full_int_stack",
+                            "parameters": []
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Egress.eg_p4_sw_port_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg10 | Is next hop legacy switch?": {
+            "value": "YES",
+            "Tables": {
+                "pipe.Egress.eg_transit_port_tbl": {
+                    "grpc_name": "pipe.Egress.eg_transit_port_tbl",
+                    "keys": [
+                        {
+                            "name": "hdr.ethernet.ether_type",
+                            "match": "Exact"
+                        },
+                        {
+                            "name": "hdr.ig_metadata.ig_port",
+                            "match": "Exact"
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "name": "Egress.add_s_vlan_rm_int_polka",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        },
+                        {
+                            "name": "Egress.add_s_vlan",
+                            "parameters": [
+                                "new_vid"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "Indirect Counters": {
+                "pipe.Egress.eg_transit_port_miss_counter": {
+                    "keys": [
+                        {
+                            "name": "$COUNTER_INDEX",
+                            "match": "Exact"
+                        }
+                    ],
+                    "data_fields": {
+                        "$COUNTER_SPEC_BYTES": "$COUNTER_SPEC_BYTES",
+                        "$COUNTER_SPEC_PKTS": "$COUNTER_SPEC_PKTS"
+                    }
+                }
+            }
+        },
+        "Stg10 | EG:Is mirror pkt and export int port?": {
+            "value": "YES",
+            "Tables": {},
+            "Indirect Counters": {}
+        }
+    },
+    "pkt_values": {
+        "Input pkt": "eth(0x8842)/polka(0x0601)/int_shim(1,0x0800)/int0/ipv4/udp/payload",
+        "ig_intr_md.ingress_port": 10,
+        "hdr.ig_metadata.ig_port": 10,
+        "ig_tm_md.ucast_egress_port": 64,
+        "eg_intr_md.egress_port": 64,
+        "hdr.ethernet.dst_addr": "aa:aa:aa:aa:aa:aa",
+        "hdr.ethernet.src_addr": "bb:bb:bb:bb:bb:bb",
+        "hdr.ethernet.ether_type": "0x8842",
+        "hdr.custom_int_shim.int_count": "1",
+        "hdr.s_vlan.vid": 0,
+        "hdr.s_vlan.vid_mask": "0x0",
+        "hdr.u_vlan.vid": 0,
+        "hdr.u_vlan.vid_mask": "0x0",
+        "hdr.ipv4.dst_addr": "192.168.230.2",
+        "hdr.ipv4.src_addr": "192.168.230.3",
+        "hdr_new_vid": "",
+        "hdr_ing_ses": 60.0,
+        "Output pkt": "eth(0x88a8)/s-vlan(900,0x0800)/ipv4/udp/payload"
+    }
+}

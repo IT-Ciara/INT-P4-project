@@ -1,5 +1,0 @@
-{
-    "interfaces": ["enp4s0f0","enp4s0f1"],
-    "ingress_port": 64,
-    "egress_port": 66
-}
