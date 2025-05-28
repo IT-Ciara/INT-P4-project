@@ -402,7 +402,7 @@ Counter<bit<64>,index2_t>(1,CounterType_t.PACKETS_AND_BYTES) eg_export_int_miss_
         actions = {
             set_port_md;
         }
-        default_action = set_port_md(0, 0, 0);
+        // default_action = set_port_md(0, 0, 0);
         size = 16;
         counters = eg_port_info_tbl_counter;
     }    
