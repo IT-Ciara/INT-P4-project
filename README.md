@@ -7,6 +7,11 @@ The current implementation is available in the [v1.6](./v1.6/) folder
 #### Versioning
 * 📌 Current version: v1.6
 * 📁 Past versions can be found in the [past-versions](./past-versions) directory.
+- [v1.1](./past-versions/v1.1)
+- [v1.2](./past-versions/v1.2)
+- [v1.3](./past-versions/v1.3)
+- [v1.4](./past-versions/v1.4)
+- [v1.5](./past-versions/v1.5)
 
 The current pipeline structure (v1.6) is illustrated below:
 
